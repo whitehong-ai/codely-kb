@@ -1,0 +1,2 @@
+[console_scripts]
+codely-kb = codely_kb.server:main

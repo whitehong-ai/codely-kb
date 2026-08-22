@@ -1,0 +1,36 @@
+Metadata-Version: 2.4
+Name: codely-kb
+Version: 0.1.0
+Summary: Codely Knowledge Engine — MCP Server for document knowledge base, semantic search, and learning progress
+Author: hongfeng
+License: Apache-2.0
+Keywords: mcp,rag,knowledge-base,embeddings,codely
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: markdown-it-py>=3.0.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: numpy>=1.24.0
+Provides-Extra: mcp
+Requires-Dist: mcp>=1.0.0; extra == "mcp"
+Provides-Extra: embeddings
+Requires-Dist: sentence-transformers>=2.7.0; extra == "embeddings"
+Requires-Dist: chromadb>=0.5.0; extra == "embeddings"
+Provides-Extra: pdf
+Requires-Dist: PyMuPDF>=1.24.0; extra == "pdf"
+Provides-Extra: code
+Requires-Dist: tree-sitter>=0.22.0; extra == "code"
+Provides-Extra: epub
+Requires-Dist: ebooklib>=0.18; extra == "epub"
+Provides-Extra: all
+Requires-Dist: mcp>=1.0.0; extra == "all"
+Requires-Dist: sentence-transformers>=2.7.0; extra == "all"
+Requires-Dist: chromadb>=0.5.0; extra == "all"
+Requires-Dist: PyMuPDF>=1.24.0; extra == "all"
+Requires-Dist: tree-sitter>=0.22.0; extra == "all"
+Requires-Dist: ebooklib>=0.18; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+
+# Codely Knowledge Engine MCP Server
