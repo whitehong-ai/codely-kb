@@ -1,6 +1,7 @@
 """Quiz generation and grading tools."""
 from __future__ import annotations
 
+import random
 import uuid
 from typing import Any
 
@@ -17,10 +18,23 @@ def generate_quiz(kb_id: str, topic: str, num_questions: int = 5, question_type:
     concepts = list(dict.fromkeys(concepts))[:10]
     context_parts = [f"[{r['source']}## {r.get('section', '')}]\n{r['content']}" for r in results]
     context_text = "\n\n".join(context_parts)
-    type_instruction = {"choice": "multiple choice questions with 4 options (A/B/C/D) and one correct answer", "short_answer": "short answer questions", "fill_blank": "fill-in-the-blank questions", "mixed": "a mix of multiple choice, short answer, and fill-in-the-blank questions"}.get(question_type, "a mix of multiple choice, short answer, and fill-in-the-blank questions")
+    type_instruction = {"choice": "multiple choice questions with 4 options and one correct answer", "short_answer": "short answer questions", "fill_blank": "fill-in-the-blank questions", "mixed": "a mix of multiple choice, short answer, and fill-in-the-blank questions"}.get(question_type, "a mix of multiple choice, short answer, and fill-in-the-blank questions")
     difficulty_instruction = {"easy": "basic recall and definition questions", "medium": "questions requiring understanding and application", "hard": "questions requiring analysis and synthesis"}.get(difficulty, "questions requiring understanding and application")
-    suggested_prompt = f"Generate {num_questions} {difficulty_instruction} about '{topic}'.\nFormat: {type_instruction}.\n\nSource material:\n{context_text}\n\nFor each question, provide:\n- question: the question text\n- type: \"choice\", \"short_answer\", or \"fill_blank\"\n- options: list of options (for choice type)\n- answer: the correct answer\n- explanation: brief explanation\n- concepts: list of key concepts tested\n\nReturn as a JSON array."
-    return {"kb_id": kb_id, "topic": topic, "num_questions": num_questions, "question_type": question_type, "difficulty": difficulty, "concepts_found": concepts, "context_text": context_text, "suggested_prompt": suggested_prompt, "note": "Codely LLM should use suggested_prompt to generate quiz questions."}
+    suggested_prompt = (
+        f"Generate {num_questions} {difficulty_instruction} about '{topic}'.\n"
+        f"Format: {type_instruction}.\n\n"
+        f"Source material:\n{context_text}\n\n"
+        f"For each question, provide:\n"
+        f"- question: the question text\n"
+        f'- type: "choice", "short_answer", or "fill_blank"\n'
+        f"- options: list of 4 option strings (for choice type)\n"
+        f"- correct_index: the 0-based index of the correct option (0, 1, 2, or 3)\n"
+        f"- explanation: brief explanation\n"
+        f"- concepts: list of key concepts tested\n\n"
+        f"IMPORTANT: Distribute correct_index evenly across 0/1/2/3. Do NOT put all correct answers at the same position.\n"
+        f"Return as a JSON array."
+    )
+    return {"kb_id": kb_id, "topic": topic, "num_questions": num_questions, "question_type": question_type, "difficulty": difficulty, "concepts_found": concepts, "context_text": context_text, "suggested_prompt": suggested_prompt, "note": "Codely LLM should use suggested_prompt to generate quiz questions. After generating, call shuffle_quiz_options to randomize option order."}
 
 
 def grade_answer(kb_id: str, question_id: str, question_type: str, question_text: str = "", user_answer: str = "", correct_answer: str = "", score: int = 0, concepts_missed: list[str] | None = None) -> dict[str, Any]:
@@ -34,3 +48,28 @@ def list_quiz_history(kb_id: str, limit: int = 50) -> dict[str, Any]:
     total = len(history); correct_count = sum(1 for h in history if h.get("correct"))
     avg_score = sum(h.get("score", 0) for h in history) / total if total > 0 else 0
     return {"kb_id": kb_id, "history": history, "total": total, "correct_count": correct_count, "average_score": round(avg_score, 1)}
+
+
+def shuffle_quiz_options(questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Shuffle the options of each choice question and fix correct_index.
+
+    Call this after LLM generates quiz questions to ensure answer positions
+    are randomly distributed (not always B).
+    """
+    shuffled = []
+    for q in questions:
+        if q.get("type") != "choice" or not q.get("options"):
+            shuffled.append(q)
+            continue
+        options = list(q["options"])
+        correct_idx = q.get("correct_index", 0)
+        correct_text = options[correct_idx]
+        random.shuffle(options)
+        new_idx = options.index(correct_text)
+        q_shuffled = dict(q)
+        q_shuffled["options"] = options
+        q_shuffled["correct_index"] = new_idx
+        labels = ["A", "B", "C", "D"]
+        q_shuffled["answer"] = labels[new_idx]
+        shuffled.append(q_shuffled)
+    return shuffled

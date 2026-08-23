@@ -41,6 +41,7 @@ TOOL_DEFINITIONS = [
     {"name": "get_weak_concepts", "description": "Get the list of weak concepts for a learning plan with recommended review chunks.", "inputSchema": {"type": "object", "properties": {"plan_id": {"type": "string", "description": "Learning plan ID"}}, "required": ["plan_id"]}},
     {"name": "research_search", "description": "Multi-step research search combining KB retrieval and web search suggestions.", "inputSchema": {"type": "object", "properties": {"query": {"type": "string", "description": "Research question"}, "kb_id": {"type": "string", "description": "Optional KB ID"}, "depth": {"type": "string", "enum": ["quick", "standard", "deep"], "description": "Research depth (default standard)", "default": "standard"}}, "required": ["query"]}},
     {"name": "solve_search", "description": "Support for three-phase problem solving (diagnose → solve → verify).", "inputSchema": {"type": "object", "properties": {"query": {"type": "string", "description": "Problem to solve"}, "kb_id": {"type": "string", "description": "Optional KB ID"}, "phase": {"type": "string", "enum": ["diagnose", "solve", "verify"], "description": "Solving phase (default diagnose)", "default": "diagnose"}}, "required": ["query"]}},
+    {"name": "shuffle_quiz_options", "description": "Shuffle the options of each choice question and fix correct_index. Call after LLM generates quiz questions to randomize answer positions.", "inputSchema": {"type": "object", "properties": {"questions": {"type": "array", "items": {"type": "object"}, "description": "Quiz questions from generate_quiz (LLM output)"}}, "required": ["questions"]}},
 ]
 
 TOOL_HANDLERS = {
@@ -64,6 +65,7 @@ TOOL_HANDLERS = {
     "get_weak_concepts": lambda args: plan_tools.get_weak_concepts(plan_id=args["plan_id"]),
     "research_search": lambda args: research_tools.research_search(query=args["query"], kb_id=args.get("kb_id"), depth=args.get("depth", "standard")),
     "solve_search": lambda args: research_tools.solve_search(query=args["query"], kb_id=args.get("kb_id"), phase=args.get("phase", "diagnose")),
+    "shuffle_quiz_options": lambda args: {"shuffled_questions": quiz_tools.shuffle_quiz_options(args["questions"])},
 }
 
 
